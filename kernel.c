@@ -1,47 +1,23 @@
-#if !defined(__cplusplus)
-#include <stdbool.h> /* C doesn't have booleans by default. */
-#endif
-#include <stddef.h>
-#include <stdint.h>
+#include "kernel.h"
  
-/* Check if the compiler thinks we are targeting the wrong operating system. */
-#if defined(__linux__)
-#error "You are not using a cross-compiler, you will most certainly run into trouble"
-#endif
  
-/* This tutorial will only work for the 32-bit ix86 targets. */
-#if !defined(__i386__)
-#error "This tutorial needs to be compiled with a ix86-elf compiler"
-#endif
+static const size_t VGA_WIDTH = 80;
+static const size_t VGA_HEIGHT = 12;
  
-/* Hardware text mode color constants. */
-enum vga_color {
-	COLOR_BLACK = 0,
-	COLOR_BLUE = 1,
-	COLOR_GREEN = 2,
-	COLOR_CYAN = 3,
-	COLOR_RED = 4,
-	COLOR_MAGENTA = 5,
-	COLOR_BROWN = 6,
-	COLOR_LIGHT_GREY = 7,
-	COLOR_DARK_GREY = 8,
-	COLOR_LIGHT_BLUE = 9,
-	COLOR_LIGHT_GREEN = 10,
-	COLOR_LIGHT_CYAN = 11,
-	COLOR_LIGHT_RED = 12,
-	COLOR_LIGHT_MAGENTA = 13,
-	COLOR_LIGHT_BROWN = 14,
-	COLOR_WHITE = 15,
-};
+size_t terminal_row;
+size_t terminal_column;
+uint8_t terminal_color;
+uint16_t* terminal_buffer;
+ 
  
 uint8_t make_color(enum vga_color fg, enum vga_color bg) {
-	return fg | bg << 4;
+	return (uint8_t)(fg | bg << 4);
 }
  
 uint16_t make_vgaentry(char c, uint8_t color) {
-	uint16_t c16 = c;
+	uint16_t c16 = (uint16_t)c;
 	uint16_t color16 = color;
-	return c16 | color16 << 8;
+	return (uint16_t)(c16 | color16 << 8);
 }
  
 size_t strlen(const char* str) {
@@ -51,14 +27,7 @@ size_t strlen(const char* str) {
 	return ret;
 }
  
-static const size_t VGA_WIDTH = 80;
-static const size_t VGA_HEIGHT = 25;
- 
-size_t terminal_row;
-size_t terminal_column;
-uint8_t terminal_color;
-uint16_t* terminal_buffer;
- 
+
 void terminal_initialize() {
 	terminal_row = 0;
 	terminal_column = 0;
@@ -76,28 +45,107 @@ void terminal_setcolor(uint8_t color) {
 	terminal_color = color;
 }
  
+ 
+/**
+ * terminal_putentryat() - Puts character at VGA buffer index
+ * @arg1:	char ASCII to print to screen
+ * @arg2:	uint8_t color code
+ * @arg3: 	size_t X coordinate (column)
+ * @arg4:	size_t Y coordinate (row)
+ *
+ * Only ASCII characters will print normally. All other control codes
+ * will be VGA specific characters. The color must be a color from the
+ * enum vga_color to guarantee rendering. The coordinate system starts
+ * in the upper left corner and expands left and downward.
+ * 
+ * 0,0_______
+ *   |		 |
+ * 	 |		 |
+ *   |		 |
+ *	 ...
+ * 	 |_______|
+ * 			 VGA_WIDTH,VGA_HEIGHT
+ *
+ * Return: void
+ */ 
 void terminal_putentryat(char c, uint8_t color, size_t x, size_t y) {
 	const size_t index = y * VGA_WIDTH + x;
 	terminal_buffer[index] = make_vgaentry(c, color);
 }
  
+ 
+void poorman_sleep(uint64_t sleep) {
+
+	uint8_t dummy = 0;
+
+	while(sleep-- > 0) { dummy ^= 1;}
+}
+ 
 void terminal_putchar(char c) {
-	
-	// Do not print the newline character
-	if(c=='\n') {
+
+	// Newline - increment row, set to null character as marker
+	if(c == '\n') {
 		terminal_row++;
 		terminal_column = 0;
-	} else {
 
-		terminal_putentryat(c, terminal_color, terminal_column, terminal_row);
+		if (++terminal_row == VGA_HEIGHT) {
+		
+			terminal_scroll_up(1);					
+				
+		}		
+		
+		goto end;
+	}
+	
+	enum vga_color fg = c % 15;
+	enum vga_color bg = (c % 15) ^ (c % 15);
+	terminal_color = make_color(fg, bg);
 
-		if (++terminal_column == VGA_WIDTH) {
-			terminal_column = 0;
-			if (++terminal_row == VGA_HEIGHT) {
-				terminal_row = 0;
-			}
+	terminal_putentryat(c, terminal_color, terminal_column, terminal_row);
+
+	if (++terminal_column == VGA_WIDTH) {
+	
+		terminal_column = 0;	
+		
+		if (++terminal_row == VGA_HEIGHT) {
+		
+			terminal_scroll_up(1);		
+				
 		}
-        }
+	}
+    
+end:
+	return;
+}
+ 
+ 
+/**
+ * terminal_scroll_up() - Scrolls visible text up 1 line
+ * @arg1:	uint8_t rows to scroll up
+ *
+ * Shifts all content up by 1 row. All data in the current row 1 will 
+ * be permanently deleted. Columns are not affected by this function.
+ *
+ *
+ * Return: void
+ */
+void terminal_scroll_up(uint8_t count) {
+
+	size_t i,j;
+	size_t offset = count * VGA_WIDTH;
+	const size_t last_coord = VGA_HEIGHT * VGA_WIDTH;
+	
+	for(i=0, j=offset; j < last_coord; i++, j++) {	
+		terminal_buffer[i] = terminal_buffer[j];	
+	}
+	
+	// Zero out last row
+	for(i=last_coord - VGA_WIDTH; i<offset; i++) {
+		terminal_buffer = 0;
+	}
+	
+	// Sets the new row count
+	terminal_row -= count;
 }
  
 void terminal_writestring(const char* data) {
@@ -113,9 +161,11 @@ void kernel_main() {
 	/* Initialize terminal interface */
 	terminal_initialize();
  
-	/* Since there is no support for newlines in terminal_putchar
-         * yet, '\n' will produce some VGA specific character instead.
-         * This is normal.
-         */
-	terminal_writestring("Hello, kernel World!\n");
+	size_t i;
+    for(i=0; i<13; i++) {
+		terminal_writestring("Hello, loop!\n");
+		poorman_sleep(10000000);
+	}
+	
+	terminal_writestring("Did I do the scroll?!\n");
 }

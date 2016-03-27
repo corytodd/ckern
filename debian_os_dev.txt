@@ -1,0 +1,60 @@
+su root
+
+sudoedit /etc/sudoers
+
+;Add your user as a sudoer
+
+apt-get update && apt-get upgrade
+
+apt-get install build-essential module-assistant git wget vim
+
+m-a prepare
+
+sh /media/cdromXX/VBoxLinuxAdditions.run
+
+init 6
+
+; Make virtual box snapshot
+
+sudo apt-get install bison flex libgmp3-dev libmpfr-dev libisl-dev libcloog-isl-dev libmpc-dev texinfo
+
+export PREFIX="$HOME/opt/cross"
+export TARGET=i586-elf
+export PATH="$PREFIX/bin:$PATH"
+
+mkdir $HOME/src
+
+cd $HOME/src
+
+wget http://ftp.gnu.org/gnu/binutils/binutils-2.26.tar.bz2
+
+wget ftp://ftp.gnu.org/gnu/gcc/gcc-5.3.0/gcc-5.3.0.tar.bz2
+
+tar -xf binutils-2.26.tar.bz2
+tar -xf gcc-5.3.0.tar.bz2
+
+mkdir build-binutils
+cd build-binutils
+../binutils-2.26/configure --target=$TARGET --prefix="$PREFIX" --with-sysroot --disable-nls --disable-werror
+make
+make install
+
+cd $HOME/src
+
+; Make sure this is correct!
+which -- $TARGET-as || echo $TARGET-as is not in the PATH
+
+mkdir build-gcc
+cd build-gcc
+../gcc-5.3.0/configure --target=$TARGET --prefix="$PREFIX" --disable-nls --enable-languages=c,c++ --without-headers
+make all-gcc
+make all-target-libgcc
+make install-gcc
+make install-target-libgcc
+
+; Should print i586-elf-gcc (GCC) 5.3.0
+$HOME/opt/cross/bin/$TARGET-gcc --version
+
+
+export PATH="$HOME/opt/cross/bin:$PATH"
+
