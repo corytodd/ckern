@@ -7,6 +7,21 @@
 #include <kernel/tty.h>
 #endif
 
+int putchar(int ic)
+{
+#if defined(__is_concur_kernel)
+	char c = (char) ic;
+	terminal_write(&c, sizeof(c));
+#else
+	// TODO: You need to implement a write system call.
+#endif
+	return ic;
+}
+
+int puts(const char* string)
+{
+	return printf("%s\n", string);
+}
 
 static void print(const char* data, size_t data_length)
 {
@@ -71,21 +86,4 @@ int printf(const char* restrict format, ...)
 	va_end(parameters);
 
 	return written;
-}
-
-
-int putchar(int ic)
-{
-#if defined(__is_ckern_kernel)
-	char c = (char) ic;
-	terminal_write(&c, sizeof(c));
-#else
-	// TODO: You need to implement a write system call.
-#endif
-	return ic;
-}
-
-int puts(const char* string)
-{
-	return printf("%s\n", string);
 }
