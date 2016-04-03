@@ -2,3 +2,7 @@
 *.iso
 *.o
 isodir
+*.sym
+*.iso
+isodir
+sysroot

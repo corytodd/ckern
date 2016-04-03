@@ -1,8 +1,28 @@
-#include "kernel.h"
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
+#include <stdio.h>
  
+#include <kernel/tty.h>
+ 
+void kernel_early(void)
+{
+	terminal_initialize();
+}
+ 
+ 
+#if defined(__cplusplus)
+extern "C" /* Use C linkage for kernel_main. */
+#endif 
+void kernel_main(void)
+{
+	printf("Hello, kernel World!\n");
+}
+
+/*
  
 static const size_t VGA_WIDTH = 80;
-static const size_t VGA_HEIGHT = 12;
+static const size_t VGA_HEIGHT = 25;
  
 size_t terminal_row;
 size_t terminal_column;
@@ -46,28 +66,7 @@ void terminal_setcolor(uint8_t color) {
 }
  
  
-/**
- * terminal_putentryat() - Puts character at VGA buffer index
- * @arg1:	char ASCII to print to screen
- * @arg2:	uint8_t color code
- * @arg3: 	size_t X coordinate (column)
- * @arg4:	size_t Y coordinate (row)
- *
- * Only ASCII characters will print normally. All other control codes
- * will be VGA specific characters. The color must be a color from the
- * enum vga_color to guarantee rendering. The coordinate system starts
- * in the upper left corner and expands left and downward.
- * 
- * 0,0_______
- *   |		 |
- * 	 |		 |
- *   |		 |
- *	 ...
- * 	 |_______|
- * 			 VGA_WIDTH,VGA_HEIGHT
- *
- * Return: void
- */ 
+
 void terminal_putentryat(char c, uint8_t color, size_t x, size_t y) {
 	const size_t index = y * VGA_WIDTH + x;
 	terminal_buffer[index] = make_vgaentry(c, color);
@@ -83,19 +82,25 @@ void poorman_sleep(uint64_t sleep) {
  
 void terminal_putchar(char c) {
 
-	// Newline - increment row, set to null character as marker
+	// Newline
 	if(c == '\n') {
-		terminal_row++;
 		terminal_column = 0;
 
 		if (++terminal_row == VGA_HEIGHT) {
 		
-			terminal_scroll_up(1);					
+			terminal_scrollup(1);					
 				
 		}		
 		
 		goto end;
 	}
+	
+	
+	
+	
+	
+	
+	
 	
 	enum vga_color fg = c % 15;
 	enum vga_color bg = (c % 15) ^ (c % 15);
@@ -109,7 +114,7 @@ void terminal_putchar(char c) {
 		
 		if (++terminal_row == VGA_HEIGHT) {
 		
-			terminal_scroll_up(1);		
+			terminal_scrollup(1);		
 				
 		}
 	}
@@ -118,8 +123,14 @@ end:
 	return;
 }
  
+ void terminal_writestring(const char* data) {
+	size_t datalen = strlen(data);
+	for (size_t i = 0; i < datalen; i++)
+		terminal_putchar(data[i]);
+}
  
-/**
+ 
+
  * terminal_scroll_up() - Scrolls visible text up 1 line
  * @arg1:	uint8_t rows to scroll up
  *
@@ -128,8 +139,8 @@ end:
  *
  *
  * Return: void
- */
-void terminal_scroll_up(uint8_t count) {
+
+void terminal_scrollup(uint8_t count) {
 
 	size_t i,j;
 	size_t offset = count * VGA_WIDTH;
@@ -140,26 +151,25 @@ void terminal_scroll_up(uint8_t count) {
 	}
 	
 	// Zero out last row
-	for(i=last_coord - VGA_WIDTH; i<offset; i++) {
-		terminal_buffer = 0;
+	for(i=last_coord - VGA_WIDTH; i<last_coord; i++) {
+		terminal_buffer[i] = COLOR_BLACK | COLOR_BLACK << 8;
 	}
 	
 	// Sets the new row count
 	terminal_row -= count;
+	
 }
- 
-void terminal_writestring(const char* data) {
-	size_t datalen = strlen(data);
-	for (size_t i = 0; i < datalen; i++)
-		terminal_putchar(data[i]);
-}
- 
-#if defined(__cplusplus)
-extern "C" /* Use C linkage for kernel_main. */
-#endif
+
 void kernel_main() {
-	/* Initialize terminal interface */
+	Initialize terminal interface 
 	terminal_initialize();
+
+	rtc_t r;
+
+	readRTC(&r);
+
+	terminal_writestring(&r.fuuuuuck);
+	
  
 	size_t i;
     for(i=0; i<13; i++) {
@@ -169,3 +179,4 @@ void kernel_main() {
 	
 	terminal_writestring("Did I do the scroll?!\n");
 }
+*/

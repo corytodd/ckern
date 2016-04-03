@@ -6,6 +6,9 @@
 # cp $OUTBIN.bin isodir/boot/$OUTBIN.bin
 # grub-mkrescue -o $OUTBIN.iso isodir
 
+CC = /home/catix/opt/cross/bin/i586-elf-gcc 
+AS = /home/catix/opt/cross/bin/i586-elf-as
+
 # Uber pedant
 WARNINGS := -Wall -Wextra -pedantic -Wshadow -Wpointer-arith -Wcast-align \
             -Wwrite-strings -Wmissing-prototypes -Wmissing-declarations \
@@ -17,25 +20,46 @@ WARNINGS := -Wall -Wextra -pedantic -Wshadow -Wpointer-arith -Wcast-align \
 # -std=gnu99 ??
 # -ffreestanding because this is a kernel
 # -lgcc ??
-CFLAGS = -ffreestanding $(WARNINGS)
+CFLAGS = -g -ffreestanding $(WARNINGS)
 
 LDFLAGS = -ffreestanding -O2 -nostdlib
 
-all: ckern.bin
+MAIN = ckern
 
-ckern.bin: kernel.o boot.o
-	/home/catix/opt/cross/bin/i586-elf-gcc -T linker.ld -o ckern.bin $(LDFLAGS) boot.o kernel.o -lgcc
+# define the C source files
+SRCS = kernel.c rtc.c
+
+OBJS = $(SRCS:.c=.o)
+
+all: $(MAIN)
+
+$(MAIN): $(OBJS) boot.o
+	$(CC)-T linker.ld -o $(MAIN).bin $(LDFLAGS) boot.o $(OBJS) -lgcc
 	echo Kernel linked to bootloader
 
-kernel.o: kernel.c
-	/home/catix/opt/cross/bin/i586-elf-gcc -c kernel.c -o kernel.o $(CFLAGS)
+	#objcopy --only-keep-debug ckern.bin ckern.sym
+	objcopy -O binary $(MAIN).bin $(MAIN).sym
+	echo symbol file generated
+
+.c.o:
+	$(CC) $(CFLAGS) -c $<  -o $@
 	echo Kernel compiled
 
 boot.o: boot.s
-	/home/catix/opt/cross/bin/i586-elf-as boot.s -o boot.o
+	$(AS) boot.s -o boot.o
 	echo Bootloader assembled...
 
 clean:
-	rm -rf *.o *.bin
+	$(RM) *.o *~ $(MAIN)
 	echo ckern is now clean
+	
+mkiso:
+	# rm *.iso
+	cp $(MAIN).bin isodir/boot
+	sudo grub-mkrescue -o $(MAIN).iso isodir/
+	sudo chown catix:catix $(MAIN).iso
+
+run:
+	qemu-system-i386 -s -S $(MAIN).iso 
+
 	

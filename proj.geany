@@ -16,7 +16,7 @@ indent_mode=0
 name=ckern
 base_path=/home/catix/ckern/
 description=
-file_patterns=*.s;*.c;*.ld;
+file_patterns=*.s;*.c;*.ld;*.h;
 
 [long line marker]
 long_line_behaviour=1
@@ -24,10 +24,8 @@ long_line_column=72
 
 [files]
 current_page=1
-FILE_NAME_0=0;None;0;EUTF-8;1;1;0;%2Fhome%2Fcatix%2Fckern%2Fboot.s;0;4
-FILE_NAME_1=629;C;0;EUTF-8;1;1;0;%2Fhome%2Fcatix%2Fckern%2Fkernel.c;0;4
-FILE_NAME_2=0;None;0;EUTF-8;1;1;0;%2Fhome%2Fcatix%2Fckern%2Flinker.ld;0;4
-FILE_NAME_3=1188;Make;0;EUTF-8;1;1;0;%2Fhome%2Fcatix%2Fckern%2FMakefile;0;4
+FILE_NAME_0=1017;C;0;EUTF-8;1;0;0;%2Fhome%2Fcatix%2Fckern%2Flibc%2Fstdio%2Fprintf.c;0;4
+FILE_NAME_1=65;C;0;EUTF-8;1;0;0;%2Fhome%2Fcatix%2Fckern%2Flibc%2Finclude%2Fsys%2Fcdefs.h;0;4
 
 [VTE]
 last_dir=/home/catix

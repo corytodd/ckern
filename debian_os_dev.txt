@@ -19,7 +19,7 @@ init 6
 sudo apt-get install bison flex libgmp3-dev libmpfr-dev libisl-dev libcloog-isl-dev libmpc-dev texinfo
 
 export PREFIX="$HOME/opt/cross"
-export TARGET=i586-elf
+export TARGET=i686-elf
 export PATH="$PREFIX/bin:$PATH"
 
 mkdir $HOME/src
@@ -58,3 +58,6 @@ $HOME/opt/cross/bin/$TARGET-gcc --version
 
 export PATH="$HOME/opt/cross/bin:$PATH"
 
+
+;Also useful to remember
+grub-mkrescue -o <filename>.iso isodir/
