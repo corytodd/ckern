@@ -8,6 +8,9 @@ void terminal_putchar(char c);
 void terminal_write(const char* data, size_t size);
 void terminal_writestring(const char* data);
 
+void terminal_time(const char* data, size_t size); 
+void terminal_writetime(const char* data);
+
 
 /**
  * terminal_putentryat() - Puts character at VGA buffer index

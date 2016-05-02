@@ -1,6 +1,8 @@
 #ifndef _RTC_H
 #define _RTC_H
+#include <string.h>
 #include "types.h"
+#include <stdio.h>
 
 typedef struct _rtc {
 
@@ -12,8 +14,6 @@ typedef struct _rtc {
 	uint32_t year;
 	uint32_t century;
 
-	char fuuuuuck;
-
 } rtc_t;
 
 void outb(uint16_t port, uint8_t value);
@@ -21,6 +21,8 @@ void outb(uint16_t port, uint8_t value);
 uint8_t inb(uint16_t port);
 
 void readRTC(rtc_t *result);
+
+void wait(rtc_t *result, uint32_t seconds);
 
 void rtc_string(const rtc_t *input, char *output);
 

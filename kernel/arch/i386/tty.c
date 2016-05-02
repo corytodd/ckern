@@ -40,6 +40,12 @@ void terminal_putentryat(char c, uint8_t color, size_t x, size_t y)
  
 void terminal_putchar(char c)
 {
+	// New line, first column
+	if(c == '\n') {
+		terminal_row++;
+		terminal_column = 0;
+		return;
+	}
 	terminal_putentryat(c, terminal_color, terminal_column, terminal_row);
 	if ( ++terminal_column == VGA_WIDTH )
 	{
@@ -56,8 +62,21 @@ void terminal_write(const char* data, size_t size)
 	for ( size_t i = 0; i < size; i++ )
 		terminal_putchar(data[i]);
 }
- 
+
 void terminal_writestring(const char* data)
 {
 	terminal_write(data, strlen(data));
+}
+
+void terminal_time(const char* data, size_t size)
+{
+	for ( size_t i = 0; i < size; i++ ) 
+	{
+		terminal_putentryat(data[i], terminal_color, i, 1);
+	}
+}
+ 
+void terminal_writetime(const char* data)
+{
+	terminal_time(data, strlen(data));
 }
